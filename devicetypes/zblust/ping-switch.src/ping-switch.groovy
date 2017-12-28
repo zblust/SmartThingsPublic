@@ -53,29 +53,17 @@ metadata {
         	details(["switch", "refresh","ttl"])
 		}
 	}
-
-void calledBackHandler(physicalgraph.device.HubResponse hubResponse) {
-    log.error "calendar?"
-    def c = new GregorianCalendar()
-    log.error "Turning on"
-    sendEvent(name:"switch",value:'on')
-    log.error 'set lastlive'
-    log.error c.time.time
-    sendEvent(name: 'last_live', value: c.time.time)
-    def ping = ttl()
-    sendEvent(name: 'ttl', value: ping)
-    log.debug "Pinging ${device.deviceNetworkId}: ${ping}"   
+def updated() {
+	unschedule()
+	runEvery10Minutes(poll)
+	runIn(2, poll)
 }
 // parse events into attributes
 def parse(description) {
 	log.debug "Parsing '${description}'"
     def map = stringToMap(description)
-    log.error "calendar?"
     def c = new GregorianCalendar()
-    log.error "Turning on"
     sendEvent(name:"switch",value:'on')
-    log.error 'set lastlive'
-    log.error c.time.time
     sendEvent(name: 'last_live', value: c.time.time)
     def ping = ttl()
     sendEvent(name: 'ttl', value: ping)
@@ -138,12 +126,7 @@ def poll() {
 		device.deviceNetworkId = "$hosthex:$porthex" 
     
    log.debug "The DNI configured is $device.deviceNetworkId"
-    /*def hubAction = new physicalgraph.device.HubAction(
-    """GET /xml/device_description.xml HTTP/1.1\r\nHOST: 192.168.2.3\r\n\r\n""",
-    physicalgraph.device.Protocol.LAN,
-    "$macaddress", 
-    [callback: calledBackHandler])
-*/
+
     def hubAction = new physicalgraph.device.HubAction(
     	method: "GET",
     	path: "/"

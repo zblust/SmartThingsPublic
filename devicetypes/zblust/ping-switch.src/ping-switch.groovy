@@ -54,7 +54,18 @@ metadata {
 		}
 	}
 
-
+void calledBackHandler(physicalgraph.device.HubResponse hubResponse) {
+    log.error "calendar?"
+    def c = new GregorianCalendar()
+    log.error "Turning on"
+    sendEvent(name:"switch",value:'on')
+    log.error 'set lastlive'
+    log.error c.time.time
+    sendEvent(name: 'last_live', value: c.time.time)
+    def ping = ttl()
+    sendEvent(name: 'ttl', value: ping)
+    log.debug "Pinging ${device.deviceNetworkId}: ${ping}"   
+}
 // parse events into attributes
 def parse(description) {
 	log.debug "Parsing '${description}'"
@@ -69,7 +80,6 @@ def parse(description) {
     def ping = ttl()
     sendEvent(name: 'ttl', value: ping)
     log.debug "Pinging ${device.deviceNetworkId}: ${ping}"   
-    map
 }
 private ttl() { 
     def last_request = device.latestValue("last_request")
@@ -122,20 +132,22 @@ private ttl() {
 // handle commands
 def poll() {
 	//log.debug "Poll"
-	def hosthex = convertIPToHex(dest_ip)
-    def porthex = Long.toHexString(Long.parseLong(dest_port))
+	def hosthex = convertIPToHex(dest_ip).toUpperCase()
+    def porthex = Long.toHexString(Long.parseLong(dest_port)).toUpperCase()
     if (porthex.length() < 4) { porthex = "00" + porthex }
 		device.deviceNetworkId = "$hosthex:$porthex" 
     
    log.debug "The DNI configured is $device.deviceNetworkId"
-       
+    /*def hubAction = new physicalgraph.device.HubAction(
+    """GET /xml/device_description.xml HTTP/1.1\r\nHOST: 192.168.2.3\r\n\r\n""",
+    physicalgraph.device.Protocol.LAN,
+    "$macaddress", 
+    [callback: calledBackHandler])
+*/
     def hubAction = new physicalgraph.device.HubAction(
     	method: "GET",
-    	path: "/",
-        headers: [
-        HOST: "$dest_ip:80"
-    ]
-    )        
+    	path: "/"
+    )       
     
   
 	def last_request = device.latestValue("last_request")
@@ -160,14 +172,16 @@ def poll() {
     }
     sendEvent(name: 'last_request', value: c.time.time)
 
-  	//log.debug 'hubact'     
-  	log.debug hubAction
+  	log.debug 'hubact'     
+  	//log.debug hubAction
     
-	hubAction
+	//sendHubCommand(hubAction)
+    return hubAction
 }
 
 def on() {
 	log.debug "Executing 'on'"
+    sendEvent(name:"switch",value:'on')
     if(secureonpassword){
     	//if a secure password exists
         //creates a new physicalgraph.device.hubaction
@@ -178,21 +192,21 @@ def on() {
         	[secureCode: "$secureonpassword"]
         )
         //returns the result
-    	//return result
+    	return result
     } else {
     	//if no secure password exists
         //creates a new physicalgraph.device.hubaction
-    	log.debug "myWOL: SecureOn Password False"
-        log.debug "myWOL: MAC Address $macaddress"
+    	//log.debug "myWOL: SecureOn Password False"
+        //log.debug "myWOL: MAC Address $macaddress"
         def result = new physicalgraph.device.HubAction (
         	"wake on lan $macaddress",
         	physicalgraph.device.Protocol.LAN,
         	null
         )    
         //returns the result
-        //return result
+        return result
     }
-    sendEvent(name:"switch",value:'on')
+
     
 	// TODO: handle 'on' command
 }

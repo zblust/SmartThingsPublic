@@ -12,7 +12,7 @@
  *
  */
 metadata {
-	definition (name: "Z-Wave Smoke Alarm", namespace: "smartthings", author: "SmartThings") {
+	definition (name: "Z-Wave Smoke Alarm", namespace: "smartthings", author: "SmartThings", runLocally: true, minHubCoreVersion: '000.017.0012', executeCommandsLocally: false) {
 		capability "Smoke Detector"
 		capability "Carbon Monoxide Detector"
 		capability "Sensor"
@@ -22,6 +22,7 @@ metadata {
 		attribute "alarmState", "string"
 
 		fingerprint mfr:"0138", prod:"0001", model:"0002", deviceJoinName: "First Alert Smoke Detector and Carbon Monoxide Alarm (ZCOMBO)"
+		fingerprint mfr:"0138", prod:"0001", model:"0003", deviceJoinName: "First Alert Smoke Detector and Carbon Monoxide Alarm (ZCOMBO)"
 	}
 
 	simulator {

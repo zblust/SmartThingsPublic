@@ -31,6 +31,12 @@
  * Zone 2 Input Selected: SLZQSTN
  * ISCP commands were found at https://github.com/miracle2k/onkyo-eiscp/blob/master/eiscp-commands.yaml
  */
+preferences {
+	input("ip", "text", required: true, title: "IP", description: "The device IP")
+	input("port", "text", required: true, title: "port", description: "The device port")
+	input("max_vol", "number", required: true, title: "Max Vol", description: "The max volume that can be set",range: "0..100")
+    
+}
 
 metadata {
 	definition (name: "onkyoIP", namespace: "allanak", author: "Allan Klein") {
@@ -74,7 +80,7 @@ tiles {
         standardTile("aux", "device.switch", decoration: "flat"){
         	state "aux", label: 'aux', action: "aux", icon:"st.Electronics.electronics6"
         	}
-	controlTile("levelSliderControl", "device.level", "slider", height: 1, width: 2, inactiveLabel: false, range:"(0..70)") {
+	controlTile("levelSliderControl", "device.level", "slider", height: 1, width: 2, inactiveLabel: false, range:"(0..$max_vol)") {
 		state "level", label:'${currentValue}', action:"setLevel", backgroundColor:"#ffffff"
 		}
         standardTile("zone2", "device.switch", inactiveLabel: false, decoration: "flat") {
@@ -104,16 +110,31 @@ def parse(description) {
     def json = msg.json              // => any JSON included in response body, as a data structure of lists and maps
     def xml = msg.xml                // => any XML included in response body, as a document tree structure
     def data = msg.data              // => either JSON or XML in response body (whichever is specified by content-type header in response)
+	log.debug body
+}
+def poll() {
+	makeNetworkId()	
+	def msg = getEiscpMessage("PWRQSTN")
+	def ha = new physicalgraph.device.HubAction(msg,physicalgraph.device.Protocol.LAN,device.deviceNetworkId, [callback: setPowerStatus]))
+    return hubAction
+}
+void setPowerStatus(physicalgraph.device.HubResponse hubResponse) {
+    log.debug "Entered setPowerStatus()..."
+    def body = hubResponse.xml
+    
+    log.debug "body in calledBackHandler() is: ${body}"
 }
 //device.deviceNetworkId should be writeable now..., and its not...
-def makeNetworkId(ipaddr, port) { 
-	String hexIp = ipaddr.tokenize('.').collect {String.format('%02X', it.toInteger()) }.join() 
-	String hexPort = String.format('%04X', port.toInteger()) 
+def makeNetworkId() { 
+	String hexIp = $ip.tokenize('.').collect {String.format('%02X', it.toInteger()) }.join() 
+	String hexPort = String.format('%04X', $port.toInteger()) 
 	log.debug "The target device is configured as: ${hexIp}:${hexPort}" 
-	return "${hexIp}:${hexPort}" 
+	device.deviceNetworkId = "$hosthex:$porthex" 
 	}
 def updated() {
-	//device.deviceNetworkId = makeNetworkId(settings.deviceIP,settings.devicePort)	
+	unschedule()
+	runEvery10Minutes(poll)
+	runIn(2, poll)
 	}
 def mute(){
 	log.debug "Muting receiver"
@@ -134,7 +155,7 @@ def unmute(){
 def setLevel(vol){
 	log.debug "Setting volume level $vol"
 	if (vol < 0) vol = 0
-	else if( vol > 70) vol = 70
+	else if( vol > $max_vol) vol = $max_vol
 	else {
 		sendEvent(name:"setLevel", value: vol)
 		String volhex = vol.bytes.encodeHex()

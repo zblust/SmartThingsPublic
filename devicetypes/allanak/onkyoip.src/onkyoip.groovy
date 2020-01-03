@@ -115,7 +115,7 @@ def parse(description) {
 def poll() {
 	makeNetworkId()	
 	def msg = getEiscpMessage("PWRQSTN")
-	def ha = new physicalgraph.device.HubAction(msg,physicalgraph.device.Protocol.LAN,device.deviceNetworkId, [callback: setPowerStatus]))
+	def ha = new physicalgraph.device.HubAction(msg,physicalgraph.device.Protocol.LAN,device.deviceNetworkId, [callback: setPowerStatus])
     return hubAction
 }
 void setPowerStatus(physicalgraph.device.HubResponse hubResponse) {

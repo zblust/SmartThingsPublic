@@ -32,24 +32,19 @@
  * ISCP commands were found at https://github.com/miracle2k/onkyo-eiscp/blob/master/eiscp-commands.yaml
  */
 preferences {
-	input("ip", "text", required: true, title: "IP", description: "The device IP")
-	input("port", "text", required: true, title: "port", description: "The device port")
-	input("max_vol", "number", required: true, title: "Max Vol", description: "The max volume that can be set",range: "0..100")
-    
+	input("ip", "text", required: true, title: "IP", description: "The device IP",displayDuringSetup: true)
+	input("port", "text", required: true, title: "port", description: "The device port",displayDuringSetup: true)
 }
 
 metadata {
 	definition (name: "onkyoIP", namespace: "allanak", author: "Allan Klein") {
 	capability "Switch"
 	capability "Music Player"
+    capability "Refresh"
 	command "cable"
-	command "stb"
 	command "pc"
-	command "net"
+	command "game"
 	command "aux"
-	command "z2on"
-	command "z2off"
-	command "makeNetworkId", ["string","string"]
 	}
 
 simulator {
@@ -61,32 +56,33 @@ tiles {
         	state "on", label: '${name}', action: "switch.off", icon: "st.switches.switch.on", backgroundColor: "#79b821"
         	state "off", label: '${name}', action: "switch.on", icon: "st.switches.switch.off", backgroundColor: "#ffffff"
    		}
+        /*standardTile("refresh", "device.poll", inactiveLabel: false, decoration: "flat") {
+            state "default", action:"polling.poll", icon:"st.secondary.refresh"
+        }*/
+        
         standardTile("mute", "device.switch", inactiveLabel: false, decoration: "flat") {
 		state "unmuted", label:"mute", action:"mute", icon:"st.custom.sonos.unmuted", backgroundColor:"#ffffff", nextState:"muted"
 		state "muted", label:"unmute", action:"unmute", icon:"st.custom.sonos.muted", backgroundColor:"#ffffff", nextState:"unmuted"
         	}
         standardTile("cable", "device.switch", decoration: "flat"){
-        	state "cable", label: 'cable', action: "cable", icon:"st.Electronics.electronics3"
-        	}
-        standardTile("stb", "device.switch", decoration: "flat"){
-        	state "stb", label: 'shield', action: "stb", icon:"st.Electronics.electronics5"
+        	state "cable", label: 'Xbox One', action: "cable", icon:"st.Electronics.electronics3"
         	}
         standardTile("pc", "device.switch", decoration: "flat"){
-        	state "pc", label: 'pc', action: "pc", icon:"st.Electronics.electronics18"
+        	state "pc", label: 'PC', action: "pc", icon:"st.Electronics.electronics18"
         	}
-        standardTile("net", "device.switch", decoration: "flat"){
-        	state "net", label: 'net', action: "net", icon:"st.Electronics.electronics2"
+        standardTile("game", "device.switch", decoration: "flat"){
+        	state "game", label: 'Switch', action: "game", icon:"st.Electronics.electronics2"
         	}
         standardTile("aux", "device.switch", decoration: "flat"){
-        	state "aux", label: 'aux', action: "aux", icon:"st.Electronics.electronics6"
+        	state "aux", label: 'AUX', action: "aux", icon:"st.Electronics.electronics6"
         	}
-	controlTile("levelSliderControl", "device.level", "slider", height: 1, width: 2, inactiveLabel: false, range:"(0..$max_vol)") {
+	controlTile("levelSliderControl", "device.level", "slider", height: 1, width: 2, inactiveLabel: false, range:"(0..100)") {
 		state "level", label:'${currentValue}', action:"setLevel", backgroundColor:"#ffffff"
 		}
-        standardTile("zone2", "device.switch", inactiveLabel: false, decoration: "flat") {
+        /*standardTile("zone2", "device.switch", inactiveLabel: false, decoration: "flat") {
 		state "off", label:"Enable Zone 2", action:"z2on", icon:"st.custom.sonos.unmuted", backgroundColor:"#ffffff", nextState:"on"
 		state "on", label:"Disable Zone 2", action:"z2off", icon:"st.custom.sonos.muted", backgroundColor:"#ffffff", nextState:"off"
-        	}
+        	}*/
         /*   Commenting this out as it doesn't work yet     
         valueTile("currentSong", "device.trackDescription", inactiveLabel: true, height:1, width:3, decoration: "flat") {
 		state "default", label:'${currentValue}', backgroundColor:"#ffffff"
@@ -96,42 +92,47 @@ tiles {
 
 	
     main "switch"
-    details(["switch","mute","cable","stb","pc","net","aux","levelSliderControl","zone2"])
+    //details(["switch","mute","cable","stb","pc","net","aux","levelSliderControl","zone2"])
+    details(["switch","mute","levelSliderControl","cable","game","pc","aux",])
     //Add currentSong to above once I can figure out how to get the QSTN commands parsed into artist/song titles
 }
 
 // parse events into attributes
 def parse(description) {
+	log.debug "In Parse..."
+    /*log.debug description
     def msg = parseLanMessage(description)
-    def headersAsString = msg.header // => headers as a string
-    def headerMap = msg.headers      // => headers as a Map
-    def body = msg.body              // => request body as a string
-    def status = msg.status          // => http status code of the response
-    def json = msg.json              // => any JSON included in response body, as a data structure of lists and maps
-    def xml = msg.xml                // => any XML included in response body, as a document tree structure
-    def data = msg.data              // => either JSON or XML in response body (whichever is specified by content-type header in response)
-	log.debug body
+    log.debug  msg.header // => headers as a string
+    //def headerMap = msg.headers      // => headers as a Map
+    log.debug "body is: ${msg.body}"              // => request body as a string
+    log.debug "status is: ${msg.status}"          // => http status code of the response
+    //log.debug msg.json              // => any JSON included in response body, as a data structure of lists and maps
+    //log.debug msg.xml                // => any XML included in response body, as a document tree structure
+    log.debug "data is: ${msg.data}"*/
 }
 def poll() {
-	makeNetworkId()	
-	def msg = getEiscpMessage("PWRQSTN")
-	def ha = new physicalgraph.device.HubAction(msg,physicalgraph.device.Protocol.LAN,device.deviceNetworkId, [callback: setPowerStatus])
-    return hubAction
+	log.debug "Entered poll()..."
+    makeNetworkId()	
+	//def msg = getEiscpMessage("PWRQSTN")
+	//def ha = new physicalgraph.device.HubAction(msg,physicalgraph.device.Protocol.LAN)
+    //return ha
 }
 void setPowerStatus(physicalgraph.device.HubResponse hubResponse) {
     log.debug "Entered setPowerStatus()..."
-    def body = hubResponse.xml
-    
+    log.debug hubResponse
+    def body = hubResponse.body
+    log.debug hubResponse.status
     log.debug "body in calledBackHandler() is: ${body}"
 }
 //device.deviceNetworkId should be writeable now..., and its not...
 def makeNetworkId() { 
-	String hexIp = $ip.tokenize('.').collect {String.format('%02X', it.toInteger()) }.join() 
-	String hexPort = String.format('%04X', $port.toInteger()) 
+	String hexIp = "$ip".tokenize('.').collect {String.format('%02X', it.toInteger()) }.join() 
+	String hexPort = String.format('%04X', "$port".toInteger()) 
 	log.debug "The target device is configured as: ${hexIp}:${hexPort}" 
-	device.deviceNetworkId = "$hosthex:$porthex" 
+	device.deviceNetworkId = "$hexIp:$hexPort" 
 	}
 def updated() {
+	log.debug "Entered updated()..."
 	unschedule()
 	runEvery10Minutes(poll)
 	runIn(2, poll)
@@ -148,15 +149,15 @@ def unmute(){
 	log.debug "Unmuting receiver"
 	sendEvent(name: "switch", value: "unmuted")
 	def msg = getEiscpMessage("AMT00")
-	def ha = new physicalgraph.device.HubAction(msg,physicalgraph.device.Protocol.LAN )
+	def ha = new physicalgraph.device.HubAction(msg,physicalgraph.device.Protocol.LAN)
 	return ha
 	}
 
 def setLevel(vol){
-	log.debug "Setting volume level $vol"
+	//log.debug "Setting volume level $vol"
 	if (vol < 0) vol = 0
-	else if( vol > $max_vol) vol = $max_vol
-	else {
+	else if( vol > 70) vol = 70
+	
 		sendEvent(name:"setLevel", value: vol)
 		String volhex = vol.bytes.encodeHex()
 		// Strip the first six zeroes of the hex encoded value because we send volume as 2 digit hex
@@ -166,7 +167,7 @@ def setLevel(vol){
 		log.debug "Setting volume to MVL${volhex}"
 		def ha = new physicalgraph.device.HubAction(msg,physicalgraph.device.Protocol.LAN )
 		return ha
-		}
+		
 	}
 
 def on() {
@@ -192,8 +193,8 @@ def cable() {
 	return ha
 	}
 
-def stb() {
-	log.debug "Setting input to STB"
+def game() {
+	log.debug "Setting input to Game"
 	def msg = getEiscpMessage("SLI02")
 	def ha = new physicalgraph.device.HubAction(msg,physicalgraph.device.Protocol.LAN)
 	return ha
@@ -206,7 +207,7 @@ def pc() {
 	return ha
 	}
 
-def net() {
+/*def net() {
 	log.debug "Setting input to NET"
 	def msg = getEiscpMessage("SLI2B")
 	def ha = new physicalgraph.device.HubAction(msg,physicalgraph.device.Protocol.LAN)
@@ -216,7 +217,7 @@ def net() {
 	return ha
     return ha2
 	}
-
+*/
 def aux() {
 	log.debug "Setting input to AUX"
 	def msg = getEiscpMessage("SLI03")
@@ -239,7 +240,7 @@ def z2off() {
 
 def getEiscpMessage(command){
 	def sb = StringBuilder.newInstance()
-	def eiscpDataSize = command.length() + 3  // this is the eISCP data size
+	def eiscpDataSize = command.length() + 2  // this is the eISCP data size
 	def eiscpMsgSize = eiscpDataSize + 1 + 16  // this is the size of the entire eISCP msg
 
 	/* This is where I construct the entire message
@@ -295,6 +296,7 @@ def getEiscpMessage(command){
 	//works with cr or crlf
 	sb.append((char)Integer.parseInt("0D", 16)) //cr
 	//sb.append((char)Integer.parseInt("0A", 16))
-
+	log.debug "Sending "+sb.toString()
+    log.debug String.format("%x", new BigInteger(1, sb.toString().getBytes()))
 	return sb.toString()
 	}

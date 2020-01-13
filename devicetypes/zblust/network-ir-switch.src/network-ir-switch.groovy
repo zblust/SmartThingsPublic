@@ -62,7 +62,7 @@ def on() {
 		headers: [
 			HOST: "$dest_ip:$dest_port"
 		],
-		query: [code: "${on_code}", pass: "${password}",pulse:3,simple:"1"]
+		query: [code: "${on_code}", pass: "${password}",pulse:3,repeat:3,simple:"1"]
 	)
 	return result
 
@@ -78,7 +78,7 @@ def off() {
 		headers: [
 			HOST: "$dest_ip:$dest_port"
 		],
-		query: [code: "${off_code}", pass: "${password}",pulse:3,simple:"1"]
+		query: [code: "${off_code}", pass: "${password}",pulse:3,repeat:3,simple:"1"]
 	)
 	return result
 }
